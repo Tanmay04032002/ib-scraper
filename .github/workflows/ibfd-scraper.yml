@@ -64,7 +64,7 @@ jobs:
           python - <<'PYEOF'
           import re
 
-          with open("ibfd_threaded.py", "r") as f:
+          with open("i.py", "r") as f:
               src = f.read()
 
           headless_block = '''    options = webdriver.ChromeOptions()
@@ -82,7 +82,7 @@ jobs:
               src
           )
 
-          with open("ibfd_threaded.py", "w") as f:
+          with open("i.py", "w") as f:
               f.write(src)
 
           print("Patch applied successfully.")
@@ -91,7 +91,7 @@ jobs:
       # ── 9. Run the scraper ────────────────────────────────────────────────
       - name: Run scraper
         run: |
-          python ibfd_threaded.py
+          python i.py
         env:
           PYTHONUNBUFFERED: "1"   # Ensures print() logs appear in real time
 
