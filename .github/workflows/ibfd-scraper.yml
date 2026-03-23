@@ -1,0 +1,112 @@
+name: IBFD PDF Scraper
+
+on:
+  schedule:
+    - cron: '0 */5 * * *'   # Runs every 5 hours automatically
+  workflow_dispatch:          # Also allows manual trigger from GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340      # ~5h 40min — safely under GitHub's 6-hour job limit
+
+    steps:
+      # ── 1. Checkout your repo ─────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Set up Python ──────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # ── 3. Install Python dependencies ────────────────────────────────────
+      - name: Install Python dependencies
+        run: |
+          pip install selenium webdriver-manager requests
+
+      # ── 4. Install headless Chrome + ChromeDriver ─────────────────────────
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      # ── 5. Install rclone ─────────────────────────────────────────────────
+      - name: Install rclone
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+
+      # ── 6. Configure rclone with Google Drive credentials from Secrets ─────
+      - name: Configure rclone
+        env:
+          RCLONE_CONFIG_CONTENT: ${{ secrets.RCLONE_CONFIG }}
+        run: |
+          mkdir -p ~/.config/rclone
+          echo "$RCLONE_CONFIG_CONTENT" > ~/.config/rclone/rclone.conf
+
+      # ── 7. Restore previously downloaded PDFs from Google Drive ───────────
+      #       This lets the script skip already-downloaded files on every run.
+      - name: Sync existing downloads from Google Drive
+        run: |
+          mkdir -p ibfd_downloads
+          rclone sync gdrive:ibfd_downloads ./ibfd_downloads \
+            --transfers=8 \
+            --fast-list \
+            --progress \
+            || echo "Initial sync failed or folder empty — continuing anyway"
+
+      # ── 8. Patch script for headless Chrome ───────────────────────────────
+      #       Injects headless flags without modifying your committed script.
+      - name: Patch script for headless mode
+        run: |
+          python - <<'PYEOF'
+          import re
+
+          with open("ibfd_threaded.py", "r") as f:
+              src = f.read()
+
+          headless_block = '''    options = webdriver.ChromeOptions()
+              options.add_argument("--headless=new")
+              options.add_argument("--no-sandbox")
+              options.add_argument("--disable-dev-shm-usage")
+              options.add_argument("--disable-gpu")
+              options.add_argument("--window-size=1920,1080")
+              options.add_argument("--start-maximized")'''
+
+          # Replace only the options block inside make_driver()
+          src = re.sub(
+              r'options = webdriver\.ChromeOptions\(\)\s*\n\s*options\.add_argument\("--start-maximized"\)',
+              headless_block,
+              src
+          )
+
+          with open("ibfd_threaded.py", "w") as f:
+              f.write(src)
+
+          print("Patch applied successfully.")
+          PYEOF
+
+      # ── 9. Run the scraper ────────────────────────────────────────────────
+      - name: Run scraper
+        run: |
+          python ibfd_threaded.py
+        env:
+          PYTHONUNBUFFERED: "1"   # Ensures print() logs appear in real time
+
+      # ── 10. Upload new PDFs to Google Drive ───────────────────────────────
+      #        Runs even if the scraper step fails (always:), so no downloads are lost.
+      - name: Sync downloads to Google Drive
+        if: always()
+        run: |
+          rclone sync ./ibfd_downloads gdrive:ibfd_downloads \
+            --transfers=8 \
+            --fast-list \
+            --progress
+
+      # ── 11. Summary ───────────────────────────────────────────────────────
+      - name: Print download summary
+        if: always()
+        run: |
+          echo "Total PDFs in folder: $(ls ibfd_downloads/*.pdf 2>/dev/null | wc -l)"
