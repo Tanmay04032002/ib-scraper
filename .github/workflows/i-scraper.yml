@@ -40,8 +40,8 @@ jobs:
 
       - name: Sync existing downloads from drive
         run: |
-          mkdir -p i_downloads
-          rclone sync gdrive:i_downloads ./i_downloads \
+          mkdir -p ibfd_downloads
+          rclone sync gdrive:ibfd_downloads ./ibfd_downloads \
             --transfers=8 \
             --fast-list \
             --progress \
@@ -84,7 +84,7 @@ jobs:
       - name: Sync downloads to drive
         if: always()
         run: |
-          rclone sync ./i_downloads gdrive:i_downloads \
+          rclone sync ./ibfd_downloads gdrive:ibfd_downloads \
             --transfers=8 \
             --fast-list \
             --progress
@@ -92,4 +92,4 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          echo "Total files: $(ls i_downloads/*.pdf 2>/dev/null | wc -l)"
+          echo "Total files: $(ls ibfd_downloads/*.pdf 2>/dev/null | wc -l)"
