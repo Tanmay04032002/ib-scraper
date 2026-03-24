@@ -9,7 +9,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from concurrent.futures import ThreadPoolExecutor
 
 # ── Settings ──────────────────────────────────────────────
-download_folder = "i_downloads"
+download_folder = "ibfd_downloads"
 os.makedirs(download_folder, exist_ok=True)
 
 base_url = "https://ibfd.archivalware.co.uk/awweb/pdfopener?md=1&did="
