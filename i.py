@@ -14,7 +14,7 @@ os.makedirs(download_folder, exist_ok=True)
 
 base_url = "https://ibfd.archivalware.co.uk/awweb/pdfopener?md=1&did="
 
-start = 68500
+start = 64000
 end   = 45001
 
 MAX_WORKERS = 1          # 2 browsers open at all times throughout the run
