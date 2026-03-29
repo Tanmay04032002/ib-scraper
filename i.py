@@ -14,8 +14,8 @@ os.makedirs(download_folder, exist_ok=True)
 
 base_url = "https://ibfd.archivalware.co.uk/awweb/pdfopener?md=1&did="
 
-start = 48000
-end   = 45001
+start = 100001
+end   = 200000
 
 MAX_WORKERS = 1          # 2 browsers open at all times throughout the run
 DELAY_MIN   = 3          # Minimum seconds to wait between each request (per thread)
@@ -101,7 +101,7 @@ def worker(dids_chunk):
 
 
 # Split all IDs into equal chunks — one chunk per worker
-all_dids = list(range(start, end - 1, -1))
+all_dids = list(range(start, end + 1))
 chunk_size = len(all_dids) // MAX_WORKERS
 chunks = [all_dids[i::MAX_WORKERS] for i in range(MAX_WORKERS)]
 
