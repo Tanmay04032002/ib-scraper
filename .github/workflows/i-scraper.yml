@@ -6,7 +6,7 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 350   # 5h 50min — maximises time before GitHub's 6h hard limit
+    timeout-minutes: 300   # 5h — maximises time before GitHub's 6h hard limit
 
     steps:
       - name: Checkout repository
