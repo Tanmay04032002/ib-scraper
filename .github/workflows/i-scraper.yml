@@ -1,7 +1,7 @@
 name: i scraper
 
 on:
-  workflow_dispatch:   # Manual trigger only — you run it when you want
+  workflow_dispatch:   # Manual trigger only
 
 jobs:
   scrape:
